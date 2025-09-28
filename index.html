@@ -1,0 +1,1157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Love Letter</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <style>
+        /* --- Font Import for Handwriting and Inter --- */
+        @import url('https://fonts.googleapis.com/css2?family=Cedarville+Cursive&family=Inter:wght@400;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght=400;700&display=swap');
+
+        :root {
+            --primary: #f8f8f8;
+            --bg-color: #e0e0e0;
+            --bg-envelope-color: #fafafa;
+            --envelope-tab: #e8e8e8;
+            --envelope-cover: #dcdcdc;
+            --shadow-color: rgba(0, 0, 0, 0.05);
+            --txt-color: #333;
+            --heart-color: #ff6b6b;
+            /* Fire/Glow Colors */
+            --fire-color-1: #ff7f00; /* Deep Orange */
+            --fire-color-2: #ff4500; /* Orange Red */
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            /* --- Background Image Styling --- */
+            background: url('https://i.ibb.co/HTWbHfCj/edeebea7-e757-4d0e-9d95-e46c80173f9c.jpg') no-repeat center center fixed;
+            background-size: cover;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+        .container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            z-index: 10;
+        }
+        .envelope-wrapper {
+            background: var(--bg-envelope-color);
+            box-shadow: 0 5px 15px var(--shadow-color);
+            z-index: 20;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: transform 0.5s ease-in-out, opacity 0.5s ease-in-out;
+        }
+
+        /* Envelope toss animation */
+        .envelope-wrapper.toss {
+            transform: translate(50vw, -150vh) scale(0.1) rotate(100deg);
+            opacity: 0;
+            transition: transform 1.5s ease-in, opacity 1s ease-in;
+        }
+
+        /* Basic Envelope Styles */
+        .envelope-wrapper > .envelope {
+            position: relative;
+            width: 300px;
+            height: 230px;
+        }
+        .envelope-wrapper > .envelope::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            z-index: 2;
+            border-top: 130px solid var(--envelope-tab);
+            border-right: 150px solid transparent;
+            border-left: 150px solid transparent;
+            transform-origin: top;
+            transition: transform 0.7s ease-in-out 0.7s;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+        }
+        .envelope-wrapper > .envelope::after {
+            content: "";
+            position: absolute;
+            z-index: 2;
+            width: 0;
+            height: 0;
+            border-top: 130px solid transparent;
+            border-right: 150px solid var(--envelope-cover);
+            border-bottom: 100px solid var(--envelope-cover);
+            border-left: 150px solid var(--envelope-cover);
+            border-bottom-left-radius: 8px;
+            border-bottom-right-radius: 8px;
+        }
+
+        /* Heart Styles */
+        .heart {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 30px;
+            height: 30px;
+            background: var(--heart-color);
+            z-index: 4;
+            transform: translate(-50%, -10%) rotate(45deg);
+            transition: transform 0.5s ease-in-out 1s;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .heart:before, .heart:after {
+            content: "";
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background-color: var(--heart-color);
+            border-radius: 50%;
+        }
+        .heart:before { top: -15px; }
+        .heart:after { right: 15px; }
+        .heart-text {
+            position: relative;
+            z-index: 5;
+            font-family: 'Inter', sans-serif;
+            font-size: 7px;
+            font-weight: 400;
+            color: var(--primary);
+            transform: rotate(-45deg);
+            text-align: center;
+            line-height: 1;
+            letter-spacing: 0.5px;
+        }
+
+        .flap > .envelope::before {
+            transform: rotateX(180deg);
+            z-index: 0;
+        }
+        .flap > .heart {
+            transform: rotate(90deg) scale(0);
+            transition-delay: 0.4s;
+        }
+
+        /* Letter Animation & Contained Styles */
+        .letter {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%) scale(0.5);
+            width: 54%;
+            height: 80%;
+            background: var(--primary);
+            box-shadow: 0 0 5px var(--shadow-color);
+            padding: 30px;
+            opacity: 0;
+            z-index: 3;
+            transition: all 1s ease-in-out;
+            border-radius: 8px;
+            overflow-y: hidden;
+        }
+
+        @keyframes letter-out-and-fit {
+            0% {
+                bottom: 0;
+                opacity: 1;
+                transform: translateX(-50%) scale(1);
+                width: 54%;
+                height: 80%;
+            }
+            100% {
+                bottom: auto;
+                opacity: 1;
+                transform: translate(-50%, -50%);
+                width: 90vw;
+                height: 90vh;
+                position: fixed;
+                left: 50%;
+                top: 50%;
+                overflow-y: auto;
+                z-index: 100;
+                padding: 2rem;
+            }
+        }
+
+        .letter.open {
+            animation: letter-out-and-fit 3s forwards;
+            animation-delay: 1.2s;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        .letter.close {
+            animation: letter-in-and-fold 1.5s forwards;
+            transition: none;
+        }
+
+        @keyframes letter-in-and-fold {
+            0% {
+                transform: translate(-50%, -50%);
+                width: 90vw;
+                height: 90vh;
+                opacity: 1;
+                position: fixed;
+                left: 50%;
+                top: 50%;
+            }
+            100% {
+                transform: translateX(-50%) scale(0.5);
+                width: 54%;
+                height: 80%;
+                opacity: 0;
+                position: absolute;
+                left: 50%;
+                bottom: 0;
+                top: auto;
+                z-index: 3;
+            }
+        }
+
+        /* Letter Content Styling */
+        .letter-content {
+            font-family: 'Cedarville Cursive', cursive;
+            color: var(--txt-color);
+            font-size: clamp(24px, 4vw, 32px);
+            line-height: 1.8;
+            white-space: pre-wrap;
+            text-align: left;
+        }
+        @keyframes blink { 50% { opacity: 0; } }
+        .typing-cursor {
+            font-family: 'Cedarville+Cursive', cursive;
+            font-size: clamp(24px, 4vw, 32px);
+            line-height: 1.8;
+            display: inline-block;
+            animation: blink 1s step-end infinite;
+            vertical-align: top;
+        }
+
+        /* --- Message Footer (After Letter) --- */
+        #message-footer {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 800px;
+            background: rgba(44, 62, 80, 0.95);
+            color: var(--primary);
+            padding: 1.5rem;
+            border-radius: 12px 12px 0 0;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            z-index: 50;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.5s ease-in-out;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        #message-footer.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+        #footer-text-content {
+            font-family: 'Cedarville Cursive', cursive;
+            font-size: clamp(18px, 3vw, 24px);
+            line-height: 1.6;
+            margin-bottom: 1rem;
+        }
+
+        /* --- DIARY WRITING CANVAS (The element that burns) --- */
+        #diary-paper {
+            /* Requirement: White and Rounded, Centered, not removed after "Okie Dokie" */
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 95%;
+            max-width: 900px;
+            height: 95vh;
+            max-height: 800px;
+            background: #fff; /* Requirement 1: Plain white paper */
+            color: var(--txt-color);
+            border-radius: 12px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+            padding: 30px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            opacity: 1;
+            visibility: hidden;
+            transition: all 0.5s ease-in, opacity 4s ease-in;
+            z-index: 100;
+        }
+        #diary-paper.visible {
+            visibility: visible;
+            transition: opacity 0.5s ease-in;
+        }
+
+        /* --- Burning Ritual Styles --- */
+        @keyframes subtleShake {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            25% { transform: translate(-50.5%, -49.5%) scale(1.005); }
+            50% { transform: translate(-49.5%, -50.5%) scale(1.005); }
+            75% { transform: translate(-50.5%, -50.5%) scale(1.005); }
+        }
+
+        .burning-glow {
+            box-shadow:
+                0 0 10px 5px rgba(255, 69, 0, 0.8),
+                0 0 50px 10px var(--fire-color-1),
+                0 0 100px 30px rgba(255, 165, 0, 0.4);
+            border: 4px solid var(--fire-color-2);
+            filter: brightness(1.1) contrast(1.1);
+            animation: subtleShake 0.5s infinite alternate;
+            transition: all 0.5s ease-in-out;
+        }
+
+        /* Burning Disintegration Classes */
+        .disintegrate-stage-1 { filter: grayscale(0.2) blur(0.2px); transform: translate(-50%, -50%) scale(0.98); opacity: 0.95; }
+        .disintegrate-stage-2 { filter: grayscale(0.5) blur(0.5px); transform: translate(-50%, -50%) scale(0.95) rotate(0.5deg); opacity: 0.8; }
+        .disintegrate-stage-3 { filter: grayscale(0.8) blur(1px) brightness(0.6); transform: translate(-50%, -50%) scale(0.90) rotate(-0.5deg); opacity: 0.6; }
+        .disintegrate-final { transform: translate(-50%, -50%) scale(0.2) rotate(15deg); opacity: 0; transition: all 3s ease-in; }
+
+        #fire-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; opacity: 0;
+            transition: opacity 2s ease-in-out;
+            border-radius: 8px;
+            background:
+                radial-gradient(circle at 10% 10%, rgba(255, 100, 0, 0.5) 0%, transparent 40%),
+                radial-gradient(circle at 90% 90%, rgba(255, 100, 0, 0.4) 0%, transparent 30%),
+                radial-gradient(circle at 50% 100%, rgba(255, 200, 0, 0.6) 0%, transparent 25%);
+            animation: flicker 0.1s infinite alternate;
+        }
+        .show-fire #fire-overlay { opacity: 0.8; }
+        @keyframes flicker {
+            0% { opacity: 0.7; transform: scale(1); }
+            50% { opacity: 0.85; transform: scale(1.005); }
+            100% { opacity: 0.75; transform: scale(1); }
+        }
+
+        /* Hides words as paper burns */
+        #diary-text-area.read-only .word.hidden {
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.3s ease-out;
+        }
+
+        /* --- Diary Internal Layout --- */
+        #close-diary-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            line-height: 1;
+            color: #777;
+            cursor: pointer;
+            z-index: 10;
+            padding: 5px;
+            display: none; /* Hide for this use case */
+        }
+
+        #writing-pen {
+            width: 60px; /* Requirement: Make the pen bigger */
+            height: auto;
+            position: absolute;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            transition: top 0.3s ease-out;
+            cursor: pointer; /* Requirement: Pen is always clickable for initial trigger */
+            z-index: 1;
+        }
+        /* Pen Down (Initial/Disabled State) */
+        #writing-pen:not(.active) {
+            top: 35px; /* Slightly lower position when down/disabled */
+        }
+        /* Pen Lifted (Active/Typing State) */
+        #writing-pen.active {
+            top: 5px; /* Lifted position */
+        }
+
+        #pen-instruction {
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            text-align: center;
+            margin-top: 80px;
+            transition: opacity 0.3s;
+            color: #555;
+            max-width: 80%;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        #pen-instruction.hidden {
+            opacity: 0;
+        }
+
+        #diary-input, #text-content-wrapper {
+            flex-grow: 1;
+            margin-top: 100px;
+            border: none;
+            resize: none;
+            font-family: 'Cedarville Cursive', cursive;
+            font-size: clamp(18px, 3vw, 24px);
+            line-height: 1.6;
+            background: transparent;
+            color: var(--txt-color);
+            transition: opacity 0.3s;
+            padding: 0;
+            overflow-y: auto;
+        }
+        #diary-input:focus {
+            outline: none;
+        }
+
+        /* --- Thank You Modal Layout (Lighter/Hugs) --- */
+        #thank-you-modal {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.95);
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+            z-index: 5;
+            text-align: center;
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.3s, visibility 0s linear 0.3s;
+            max-width: 80%;
+            /* Requirement: Use handwriting font */
+            font-family: 'Cedarville Cursive', cursive;
+            width: 80%;
+        }
+        #thank-you-modal.visible {
+            visibility: visible;
+            opacity: 1;
+            transition: opacity 0.3s, visibility 0s linear 0s;
+        }
+        #modal-message {
+            font-size: clamp(20px, 4vw, 28px);
+            line-height: 1.5;
+            margin-bottom: 2rem;
+            color: #444;
+        }
+        #lighter-btn {
+            background: none;
+            border: none;
+            padding: 10px;
+            cursor: pointer;
+            position: relative;
+            display: none;
+            margin: 0 auto;
+            transition: opacity 1s ease-in; /* For fading in after audio */
+            opacity: 0;
+        }
+        #lighter-btn.visible {
+            display: block;
+            opacity: 1;
+        }
+
+        /* Lighter Icon Styling */
+        .lighter-icon {
+            font-size: 60px;
+            color: #ff4500;
+            transition: color 0.3s;
+        }
+        .lighter-icon:hover {
+            color: #ff7f00;
+        }
+
+        @keyframes pulse { to { box-shadow: 0 0 25px var(--fire-color-1); } }
+
+        /* --- Video Popup (Ritual) --- */
+        #ritual-video-popup {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.85); /* Dark overlay */
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 120;
+        }
+        #ritual-video-popup.active {
+            display: flex;
+        }
+        #ritual-video {
+            max-width: 90%;
+            max-height: 90%;
+            border-radius: 12px;
+            box-shadow: 0 0 50px rgba(255, 69, 0, 0.5);
+        }
+
+        /* --- Final Message Canvas --- */
+        #final-message-canvas {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%;
+            max-width: 500px;
+            background: #fff; /* Requirement: White */
+            padding: 30px;
+            border-radius: 16px; /* Requirement: Rounded */
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            z-index: 200;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 1s ease-in-out;
+        }
+        #final-message-canvas.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+        #final-text-content {
+            font-family: 'Cedarville Cursive', cursive;
+            font-size: clamp(20px, 4vw, 28px);
+            line-height: 1.7;
+            color: #2c3e50;
+            white-space: pre-wrap;
+        }
+        /* Signature style */
+        #final-text-content .signature {
+            display: block;
+            margin-top: 20px;
+            font-size: clamp(24px, 5vw, 36px);
+        }
+        
+        #mute-btn {
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            background: rgba(255, 255, 255, 0.3);
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            font-size: 20px;
+            line-height: 1;
+            cursor: pointer;
+            z-index: 250;
+            transition: background 0.2s;
+        }
+        #mute-btn:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+    </style>
+</head>
+<body>
+    <div id="ritual-video-popup">
+        </div>
+
+    <div id="final-message-canvas">
+        <div id="final-text-content"></div>
+    </div>
+
+    <div class="container">
+        <div class="envelope-wrapper">
+            <div class="envelope">
+                <div class="letter" id="the-letter">
+
+                    <div id="intro-content" class="letter-content"></div>
+
+                    <button id="skip-btn" class="absolute bottom-4 right-4 text-sm text-gray-800 hover:text-black transition" style="display: none;">Skip Typing &raquo;</button>
+
+                    <div id="continue-button-wrapper" class="text-center mt-10">
+                        <button id="continue-btn" disabled
+                                class="px-6 py-2 bg-white text-gray-800 border-2 border-gray-800 font-bold rounded-full opacity-0 transition shadow-md hover:bg-gray-100 pointer-events-none">
+                            CONTINUE
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+            <div class="heart">
+                <span class="heart-text">OPEN ME</span>
+            </div>
+        </div>
+    </div>
+
+    <button id="mute-btn" title="Mute Sound">
+        🔊
+    </button>
+
+    <div id="message-footer">
+        <p id="footer-text-content"></p>
+
+        <div id="final-button-wrapper">
+            <button id="final-continue-btn" class="px-6 py-2 bg-red-500 text-white font-bold rounded-full shadow-lg hover:bg-red-600">OKIE DOKIE</button>
+        </div>
+    </div>
+
+    <div id="diary-paper">
+
+        <div id="fire-overlay"></div>
+
+        <div id="pen-container" class="absolute top-0 left-0 right-0">
+            <img src="https://pngimg.com/uploads/pen/pen_PNG7402.png" alt="Pen" id="writing-pen" class="transition-all duration-300">
+            <p id="pen-instruction">Click to write. After writing, click this pen again to finalize your message.</p>
+        </div>
+
+        <textarea id="diary-input" disabled placeholder="Your safe space is here... Dump all your thoughts and worries."></textarea>
+
+        <div id="thank-you-modal">
+            <p id="modal-message"></p>
+
+            <button id="lighter-btn" title="Click to start the burning">
+                <i class="lighter-icon fas fa-fire-alt"></i>
+                <p class="text-xs text-gray-600 mt-2">Click to Ignite</p>
+            </button>
+        </div>
+
+        <div id="text-content-wrapper" style="display: none; flex-grow: 1; overflow-y: auto;">
+            <div id="diary-text-area" class="read-only">
+                </div>
+        </div>
+    </div>
+
+
+    <script type="module">
+        // Global variables provided by the Canvas environment for Firebase
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        // Ensure we import the necessary Firebase modules
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- Firebase Setup & Initialization ---
+        let app, db, auth;
+        let userId = 'anon';
+
+        setLogLevel('Debug');
+
+        async function initializeFirebase() {
+            if (firebaseConfig) {
+                try {
+                    app = initializeApp(firebaseConfig);
+                    db = getFirestore(app);
+                    auth = getAuth(app);
+
+                    if (initialAuthToken) {
+                        await signInWithCustomToken(auth, initialAuthToken);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+
+                    userId = auth.currentUser?.uid || crypto.randomUUID();
+                } catch (e) {
+                    console.error("Firebase Initialization or Auth Error:", e);
+                }
+            } else {
+                console.warn("Firebase config missing. Running without persistence.");
+            }
+        }
+
+        // --- Configuration ---
+        // Requirement: New Apps Script URL
+        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyF0otTiTzwx3qQ_S1gW1KYsw91obRKeC3DZHtetGSzp_AoYdh3ZNhNdGKMnz4BkZHuqQ/exec';
+
+        // --- Ritual Configuration (40 seconds total) ---
+        const RITUAL_DURATION = 40000;
+        const STAGE_DURATION = RITUAL_DURATION / 3;
+        const VIDEO_LOOP_COUNT = 3;
+
+        // --- DOM Element References ---
+        const envelope = document.querySelector('.envelope-wrapper');
+        const letter = document.getElementById('the-letter');
+        const introContentDiv = document.getElementById('intro-content');
+        const continueBtn = document.getElementById('continue-btn');
+        const skipBtn = document.getElementById('skip-btn');
+
+        const footerDiv = document.getElementById('message-footer');
+        const footerTextContent = document.getElementById('footer-text-content');
+        const finalContinueBtn = document.getElementById('final-continue-btn');
+
+        const diaryPaper = document.getElementById('diary-paper');
+        const writingPen = document.getElementById('writing-pen');
+        const penInstruction = document.getElementById('pen-instruction');
+        const diaryInput = document.getElementById('diary-input');
+        const thankYouModal = document.getElementById('thank-you-modal');
+        const modalMessage = document.getElementById('modal-message');
+        const muteBtn = document.getElementById('mute-btn');
+        const lighterBtn = document.getElementById('lighter-btn');
+
+        // Synchronized Ritual Elements
+        const textContentWrapper = document.getElementById('text-content-wrapper');
+        const diaryTextArea = document.getElementById('diary-text-area');
+        const fireOverlay = document.getElementById('fire-overlay');
+
+        // New Ritual/Post-Ritual Elements
+        const ritualVideoPopup = document.getElementById('ritual-video-popup');
+        let ritualVideo; // Will be created dynamically
+        const finalMessageCanvas = document.getElementById('final-message-canvas');
+        const finalTextContent = document.getElementById('final-text-content');
+
+
+        // --- State Variables ---
+        let isAnimating = false;
+        let hasOpened = false;
+        let isPenActive = false; // Requirement: Pen starts disabled/down
+        let typingTimerId = null;
+        let isMuted = false;
+        let typedContent = "";
+        let ritualTimeoutId = null;
+        let videoLoopCounter = 0;
+        let isRitualRunning = false;
+
+        // --- Audio and Content Setup ---
+        // NOTE: Please ensure these audio/video files exist at the specified relative paths
+        const TYPING_AUDIO_URL = 'audio/rie.mp3';
+        const BG_AUDIO_URL = 'audio/Content 2.mp3';
+        const MODAL_AUDIO_URL = 'audio/YUNN.mp3';
+        const LIGHTER_AUDIO_URL = 'audio/Lighter.mp3';
+        const ASH_AUDIO_URL = 'audio/Ash.mp3';
+        const BREATHING_VIDEO_URL = 'video/breathing.mp4'; // Initial Ritual Video
+        const END_VIDEO_URL = 'video/End.mp4'; // Final Video
+
+        // Audio elements
+        const typingAudio = new Audio(TYPING_AUDIO_URL);
+        const bgAudio = new Audio(BG_AUDIO_URL);
+        const modalAudio = new Audio(MODAL_AUDIO_URL);
+        const lighterAudio = new Audio(LIGHTER_AUDIO_URL);
+        const ashAudio = new Audio(ASH_AUDIO_URL);
+
+        typingAudio.loop = false;
+        bgAudio.loop = true;
+        modalAudio.loop = false;
+        lighterAudio.loop = false;
+        ashAudio.loop = false;
+
+        const introContent = `To my very precious boy, Rie,
+
+Since the first day na nagkausap tayo, sobra ko nang na-cherish bawat moment with you. Every word, every smile, every little silence natin, I do treasure it all. Alam kong may mga panahon na hindi tayo makakapag-usap palagi, kaya ginawa ko itong letter na para lang sa’yo, something na pwede mong balikan kapag kailangan mo ako. I dedicate this interactive letter to you, para sa mga oras na nalulungkot ka, napre-pressure ka, o kahit sa mga simpleng sandali na nami-miss mo ako.`;
+
+        const footerMessage = `Alam ko na ang dami mong iniisip ngayon, kaya para kahit papaano gumaan ang pakiramdam mo at maibsan ang kirot sa puso mo, I’m giving you the pen and paper for you to write all of your pains and worries. This will be your temporary virtual diary, your safe space para mailabas lahat ng nasa puso’t isipan mo. Kaya feel free na sabihin lahat ng gusto mo ^^`;
+
+        const modalContent = `Hugs to you, Rie. All of your feelings are valid. Ngayon, para kahit papaano gumaan ang bigat at sakit sa puso mo, let’s burn all of this pain together. As the paper burns, follow my breathing patterns, slowly, gently, until you feel lighter.`;
+
+        const finalMessage = `I’m so proud of you for being this brave. Nandito lang ako palagi para sa’yo, no matter what. Kapag mabigat pa rin, message me or tawagan mo ako — hindi ka kailanman nag-iisa.
+
+Lubos na nagmamahal sa’yo,
+Eli`;
+
+        // --- Core Logic Functions ---
+
+        /**
+         * Saves the diary entry to a Google Sheet via Apps Script (Requirement: Column A=Date, B=Message) and to Firestore.
+         */
+        async function saveToSheet(message) {
+            if (!message) return;
+            const now = new Date();
+            const dateString = now.toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' });
+
+            // 1. Save to Google Sheet via Apps Script
+            if (APPS_SCRIPT_URL) {
+                try {
+                    await fetch(APPS_SCRIPT_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: JSON.stringify({
+                            date: dateString, // Data for Column A
+                            message: message // Data for Column B
+                        })
+                    });
+                    console.log("Sheet save request sent.");
+                } catch (error) {
+                    console.error("SHEET SAVE FAILED:", error);
+                }
+            }
+
+            // 2. Log to Firestore
+            if (db) {
+                try {
+                    const diaryRef = collection(db, `/artifacts/${appId}/users/${userId}/diary_entries`);
+                    await setDoc(doc(diaryRef), {
+                        timestamp: now.toISOString(),
+                        content: message,
+                        status: 'written_and_saved'
+                    });
+                } catch (error) {
+                    console.error("Error logging diary entry to Firestore:", error);
+                }
+            }
+        }
+
+        function skipTyping() {
+            if (typingTimerId !== null) {
+                clearTimeout(typingTimerId);
+                typingTimerId = null;
+            }
+            typingAudio.pause();
+            typingAudio.currentTime = 0;
+            introContentDiv.innerHTML = introContent;
+
+            // Ensure button appears when skipped
+            continueBtn.style.opacity = '1';
+            continueBtn.classList.remove('pointer-events-none');
+            continueBtn.removeAttribute('disabled');
+
+            skipBtn.style.display = 'none';
+            isAnimating = false;
+            hasOpened = true;
+        }
+
+        function typeWriter(text, element, callback = () => {}) {
+            let i = 0;
+            element.innerHTML = '';
+            const cursorHtml = '<span class="typing-cursor">|</span>';
+
+            skipBtn.style.display = 'block';
+
+            if (!isMuted) {
+                typingAudio.play().catch(error => console.error("Autoplay prevented:", error));
+            }
+
+            function type() {
+                if (i < text.length) {
+                    const char = text.charAt(i);
+                    element.innerHTML = text.substring(0, i + 1) + cursorHtml;
+                    i++;
+                    letter.scrollTop = letter.scrollHeight;
+                    typingTimerId = setTimeout(type, 80);
+                } else {
+                    typingAudio.pause();
+                    typingAudio.currentTime = 0;
+                    element.innerHTML = text;
+                    skipBtn.style.display = 'none';
+                    callback();
+                }
+            }
+            type();
+        }
+
+        /**
+         * Toggles the mute state for all audio elements and the video.
+         */
+        function toggleMute() {
+            isMuted = !isMuted;
+            muteBtn.textContent = isMuted ? '🔇' : '🔊';
+
+            // Mute/Unmute all audio elements
+            const mediaElements = [typingAudio, bgAudio, modalAudio, lighterAudio, ashAudio];
+            if (ritualVideo) mediaElements.push(ritualVideo);
+
+            mediaElements.forEach(el => {
+                el.muted = isMuted;
+            });
+
+            if (!isMuted) {
+                // Only resume relevant audio based on current stage
+                if (footerDiv.classList.contains('visible')) {
+                    bgAudio.play().catch(e => console.error("BGAudio resume failed:", e));
+                } else if (isRitualRunning) {
+                    // If ritual is running, ensure video and lighter audio resume
+                    if (ritualVideo && ritualVideo.paused) ritualVideo.play();
+                    // Lighter audio will play when triggered inside the ritual steps
+                }
+            } else {
+                [bgAudio, typingAudio, modalAudio, lighterAudio, ashAudio].forEach(audio => audio.pause());
+                if (ritualVideo) ritualVideo.pause();
+            }
+        }
+
+        /**
+         * Step 1: User clicks the pen to start writing.
+         */
+        function startWriting() {
+            if (!isPenActive) {
+                // Change state to active
+                isPenActive = true;
+                writingPen.classList.add('active');
+                diaryInput.disabled = false;
+                diaryInput.focus();
+                penInstruction.textContent = "Finished writing? Click this pen again to finalize your message.";
+                
+                // Hide read-only content if any
+                textContentWrapper.style.display = 'none';
+                diaryInput.style.display = 'flex';
+            } else {
+                // Step 2: User clicks the pen to finalize.
+                finalizeWriting();
+            }
+        }
+
+        /**
+         * Step 2: User clicks the pen after writing to finalize and save.
+         */
+        function finalizeWriting() {
+            typedContent = diaryInput.value.trim();
+
+            if (typedContent.length < 5) {
+                alert("Please write a few words before finalizing.");
+                return;
+            }
+
+            isPenActive = false;
+            writingPen.classList.remove('active');
+            diaryInput.disabled = true;
+            penInstruction.classList.add('hidden'); // Hide instruction
+
+            // Save the entry
+            saveToSheet(typedContent);
+
+            // Hide input, prepare read-only view for ritual
+            diaryInput.style.display = 'none';
+            textContentWrapper.style.display = 'flex';
+            prepareRitualText();
+
+            // Show Thank You Modal
+            modalMessage.textContent = modalContent;
+            thankYouModal.classList.add('visible');
+
+            // Play modal audio and then show lighter button
+            if (!isMuted) {
+                modalAudio.play().catch(e => console.error("Modal audio failed:", e));
+            }
+            
+            modalAudio.onended = () => {
+                lighterBtn.classList.add('visible');
+            };
+            if(isMuted) { // If muted, show immediately
+                 lighterBtn.classList.add('visible');
+            }
+        }
+        
+        /**
+         * Prepare the text for burning ritual by wrapping each word in a span.
+         */
+        function prepareRitualText() {
+            diaryTextArea.innerHTML = '';
+            const words = typedContent.split(/\s+/);
+            words.forEach(word => {
+                if (word) {
+                    const span = document.createElement('span');
+                    span.className = 'word inline-block';
+                    span.textContent = word + ' ';
+                    diaryTextArea.appendChild(span);
+                }
+            });
+        }
+        
+        /**
+         * Hides words gradually during the burning ritual.
+         */
+        function hideRandomWords() {
+            if (!isRitualRunning) return;
+            const words = Array.from(diaryTextArea.querySelectorAll('.word:not(.hidden)'));
+            
+            // Hide approximately 10% of remaining words every 0.5s
+            const wordsToHideCount = Math.ceil(words.length * 0.1);
+            
+            for (let i = 0; i < wordsToHideCount; i++) {
+                const randomIndex = Math.floor(Math.random() * words.length);
+                if (words[randomIndex]) {
+                    words[randomIndex].classList.add('hidden');
+                    words.splice(randomIndex, 1); // Remove from list to avoid re-selecting
+                }
+            }
+
+            // Keep fading words until the paper is completely faded out
+            if (diaryPaper.classList.contains('disintegrate-final')) return; 
+
+            setTimeout(hideRandomWords, 500); // Repeat every half second
+        }
+
+        /**
+         * Synchronized Burning Ritual
+         */
+        function startBurningRitual() {
+            isRitualRunning = true;
+            lighterBtn.classList.remove('visible');
+            thankYouModal.classList.remove('visible');
+            
+            // 1. Play Lighter Sound and Start Video
+            if (!isMuted) {
+                lighterAudio.play().catch(e => console.error("Lighter audio failed:", e));
+            }
+            
+            ritualVideoPopup.classList.add('active');
+            ritualVideo = document.createElement('video');
+            ritualVideo.id = 'ritual-video';
+            ritualVideo.src = BREATHING_VIDEO_URL;
+            ritualVideo.loop = true;
+            ritualVideo.muted = isMuted;
+            ritualVideo.playsinline = true;
+            ritualVideo.autoplay = true;
+            
+            // Clear any existing content and append the new video element
+            ritualVideoPopup.innerHTML = '';
+            ritualVideoPopup.appendChild(ritualVideo);
+            
+            ritualVideo.addEventListener('loadeddata', () => {
+                ritualVideo.play().catch(e => console.error("Video play failed:", e));
+            });
+
+            // 2. Paper Burning Visuals
+            diaryPaper.classList.add('burning-glow');
+            diaryPaper.classList.add('show-fire');
+            
+            // 3. Stage 1: Burning starts, text begins to fade (0s)
+            ritualTimeoutId = setTimeout(() => {
+                diaryPaper.classList.add('disintegrate-stage-1');
+                hideRandomWords(); // Start hiding text
+            }, STAGE_DURATION * 0.5); // Start subtle visual burn quickly
+
+            // 4. Stage 2: Deepening burn (at 1/3 duration)
+            ritualTimeoutId = setTimeout(() => {
+                diaryPaper.classList.add('disintegrate-stage-2');
+                
+                // Requirement: Play Ash.mp3 after first play of breathing video (assuming video is 40/3 seconds long)
+                if (!isMuted) {
+                     ashAudio.play().catch(e => console.error("Ash audio failed:", e));
+                }
+            }, STAGE_DURATION);
+
+            // 5. Stage 3: Intense burn (at 2/3 duration)
+            ritualTimeoutId = setTimeout(() => {
+                diaryPaper.classList.add('disintegrate-stage-3');
+            }, STAGE_DURATION * 2);
+
+            // 6. Final Disintegration (at 40 seconds)
+            ritualTimeoutId = setTimeout(() => {
+                isRitualRunning = false;
+                diaryPaper.classList.add('disintegrate-final'); // Fades the paper out
+
+                // Change video to final message video
+                if(ritualVideo) {
+                    ritualVideo.loop = false;
+                    ritualVideo.src = END_VIDEO_URL;
+                    ritualVideo.load();
+                    ritualVideo.play().catch(e => console.error("End video play failed:", e));
+                    
+                    ritualVideo.onended = () => {
+                        ritualVideoPopup.classList.remove('active');
+                        showFinalMessage();
+                    }
+                } else {
+                    // Fallback if video failed to load
+                    ritualVideoPopup.classList.remove('active');
+                    showFinalMessage();
+                }
+
+            }, RITUAL_DURATION);
+        }
+        
+        /**
+         * Shows the final comforting message.
+         */
+        function showFinalMessage() {
+            finalTextContent.innerHTML = finalMessage.replace('Eli', '<span class="signature">Eli</span>');
+            finalMessageCanvas.classList.add('visible');
+        }
+
+        // --- Event Listeners ---
+
+        muteBtn.addEventListener('click', toggleMute);
+
+        // 1. Envelope Click
+        envelope.addEventListener('click', () => {
+            if (isAnimating || hasOpened) return;
+            isAnimating = true;
+
+            envelope.classList.add('flap');
+            letter.classList.add('open');
+
+            setTimeout(() => {
+                typeWriter(introContent, introContentDiv, () => {
+                    // Typing finished callback
+                    continueBtn.style.opacity = '1';
+                    continueBtn.classList.remove('pointer-events-none');
+                    continueBtn.removeAttribute('disabled');
+                    isAnimating = false;
+                    hasOpened = true;
+                });
+            }, 1800); // Delay for the envelope and letter animation
+        });
+
+        // 2. Skip Typing Button
+        skipBtn.addEventListener('click', skipTyping);
+
+        // 3. Continue Button (opens footer)
+        continueBtn.addEventListener('click', () => {
+            if (isAnimating) return;
+            isAnimating = true;
+            
+            // Toss envelope away
+            envelope.classList.add('toss');
+            
+            // Close letter and show footer
+            letter.classList.remove('open');
+            letter.classList.add('close');
+            
+            footerTextContent.textContent = footerMessage;
+            footerDiv.classList.add('visible');
+
+            if (!isMuted) {
+                bgAudio.play().catch(e => console.error("BGAudio play failed:", e));
+            }
+            
+            setTimeout(() => {
+                isAnimating = false;
+            }, 1500);
+        });
+
+        // 4. OKIE DOKIE Button (opens diary)
+        finalContinueBtn.addEventListener('click', () => {
+            // Requirement: Set the canvas to white rounded and center it on the screen
+            // NOTE: This CSS is already applied to #diary-paper
+            diaryPaper.classList.add('visible');
+            
+            // Hide message footer and stop its audio
+            footerDiv.classList.remove('visible');
+            bgAudio.pause();
+            bgAudio.currentTime = 0;
+            
+            // Reset pen/input state if necessary
+            writingPen.classList.remove('active');
+            diaryInput.disabled = true;
+            diaryInput.value = '';
+            diaryInput.style.display = 'flex';
+            penInstruction.classList.remove('hidden');
+            penInstruction.textContent = "Click to write. After writing, click this pen again to finalize your message.";
+        });
+        
+        // 5. Pen Click (start/finalize writing)
+        writingPen.addEventListener('click', startWriting);
+        
+        // 6. Lighter Button (start ritual)
+        lighterBtn.addEventListener('click', startBurningRitual);
+
+
+        // --- Initialization ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initialize Firebase in the background
+            initializeFirebase();
+            
+            // Ensure the ritual video element is ready for reference
+            ritualVideo = document.getElementById('ritual-video');
+        });
+    </script>
+</body>
+</html>
