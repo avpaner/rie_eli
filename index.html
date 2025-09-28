@@ -719,15 +719,14 @@
         let videoLoopCounter = 0;
         let isRitualRunning = false;
 
-        // --- Audio and Content Setup ---
-        // NOTE: Please ensure these audio/video files exist at the specified relative paths
+        // --- Audio and Content Setup (UPDATED: Removed audio/ and video/ prefixes) ---
         const TYPING_AUDIO_URL = 'rie.mp3';
         const BG_AUDIO_URL = 'Content 2.mp3';
         const MODAL_AUDIO_URL = 'YUNN.mp3';
         const LIGHTER_AUDIO_URL = 'Lighter.mp3';
         const ASH_AUDIO_URL = 'Ash.mp3';
         const BREATHING_VIDEO_URL = 'breathing.mp4'; // Initial Ritual Video
-        const END_VIDEO_URL = 'End.mp3'; // Final Video
+        const END_AUDIO_URL = 'End.mp3'; // Final Audio (Updated from mp4 to mp3)
 
         // Audio elements
         const typingAudio = new Audio(TYPING_AUDIO_URL);
@@ -735,12 +734,14 @@
         const modalAudio = new Audio(MODAL_AUDIO_URL);
         const lighterAudio = new Audio(LIGHTER_AUDIO_URL);
         const ashAudio = new Audio(ASH_AUDIO_URL);
+        const endAudio = new Audio(END_AUDIO_URL); // New audio element for final sound
 
         typingAudio.loop = false;
         bgAudio.loop = true;
         modalAudio.loop = false;
         lighterAudio.loop = false;
         ashAudio.loop = false;
+        endAudio.loop = false;
 
         const introContent = `To my very precious boy, Rie,
 
@@ -853,8 +854,8 @@ Eli`;
             isMuted = !isMuted;
             muteBtn.textContent = isMuted ? '🔇' : '🔊';
 
-            // Mute/Unmute all audio elements
-            const mediaElements = [typingAudio, bgAudio, modalAudio, lighterAudio, ashAudio];
+            // Mute/Unmute all media elements
+            const mediaElements = [typingAudio, bgAudio, modalAudio, lighterAudio, ashAudio, endAudio];
             if (ritualVideo) mediaElements.push(ritualVideo);
 
             mediaElements.forEach(el => {
@@ -868,10 +869,10 @@ Eli`;
                 } else if (isRitualRunning) {
                     // If ritual is running, ensure video and lighter audio resume
                     if (ritualVideo && ritualVideo.paused) ritualVideo.play();
-                    // Lighter audio will play when triggered inside the ritual steps
                 }
             } else {
-                [bgAudio, typingAudio, modalAudio, lighterAudio, ashAudio].forEach(audio => audio.pause());
+                // Pause all audio immediately
+                [bgAudio, typingAudio, modalAudio, lighterAudio, ashAudio, endAudio].forEach(audio => audio.pause());
                 if (ritualVideo) ritualVideo.pause();
             }
         }
@@ -931,6 +932,7 @@ Eli`;
             }
             
             modalAudio.onended = () => {
+                // Lighter appears after YUNN.mp3 (modalAudio)
                 lighterBtn.classList.add('visible');
             };
             if(isMuted) { // If muted, show immediately
@@ -988,14 +990,14 @@ Eli`;
             
             // 1. Play Lighter Sound and Start Video
             if (!isMuted) {
-                lighterAudio.play().catch(e => console.error("Lighter audio failed:", e));
+                lighterAudio.play().catch(e => console.error("Lighter audio failed:", e)); // Play Lighter.mp3 when lighter.png is fading in (now when button is clicked)
             }
             
             ritualVideoPopup.classList.add('active');
             ritualVideo = document.createElement('video');
             ritualVideo.id = 'ritual-video';
             ritualVideo.src = BREATHING_VIDEO_URL;
-            ritualVideo.loop = true;
+            ritualVideo.loop = false; // We will control looping manually
             ritualVideo.muted = isMuted;
             ritualVideo.playsinline = true;
             ritualVideo.autoplay = true;
@@ -1008,54 +1010,59 @@ Eli`;
                 ritualVideo.play().catch(e => console.error("Video play failed:", e));
             });
 
+            videoLoopCounter = 0;
+            ritualVideo.onended = handleVideoLoop;
+            
             // 2. Paper Burning Visuals
             diaryPaper.classList.add('burning-glow');
             diaryPaper.classList.add('show-fire');
             
-            // 3. Stage 1: Burning starts, text begins to fade (0s)
-            ritualTimeoutId = setTimeout(() => {
-                diaryPaper.classList.add('disintegrate-stage-1');
-                hideRandomWords(); // Start hiding text
-            }, STAGE_DURATION * 0.5); // Start subtle visual burn quickly
+            // Start hiding words immediately
+            hideRandomWords(); 
 
-            // 4. Stage 2: Deepening burn (at 1/3 duration)
-            ritualTimeoutId = setTimeout(() => {
-                diaryPaper.classList.add('disintegrate-stage-2');
-                
-                // Requirement: Play Ash.mp3 after first play of breathing video (assuming video is 40/3 seconds long)
+            // 3. Set up the 40-second timeout for final fade-out
+            ritualTimeoutId = setTimeout(handleFinalRitualFade, RITUAL_DURATION);
+
+            // 4. Set up visual disintegration stages (timed to the 40s total)
+            setTimeout(() => { diaryPaper.classList.add('disintegrate-stage-1'); }, 8000); // ~8s
+            setTimeout(() => { diaryPaper.classList.add('disintegrate-stage-2'); }, 16000); // ~16s
+            setTimeout(() => { diaryPaper.classList.add('disintegrate-stage-3'); }, 24000); // ~24s
+        }
+
+        function handleVideoLoop() {
+            videoLoopCounter++;
+
+            if (videoLoopCounter === 1) {
+                 // After first play of breathing.mp4, play Ash.mp3
                 if (!isMuted) {
-                     ashAudio.play().catch(e => console.error("Ash audio failed:", e));
+                    ashAudio.play().catch(e => console.error("Ash audio failed:", e));
                 }
-            }, STAGE_DURATION);
+            }
 
-            // 5. Stage 3: Intense burn (at 2/3 duration)
-            ritualTimeoutId = setTimeout(() => {
-                diaryPaper.classList.add('disintegrate-stage-3');
-            }, STAGE_DURATION * 2);
-
-            // 6. Final Disintegration (at 40 seconds)
-            ritualTimeoutId = setTimeout(() => {
-                isRitualRunning = false;
-                diaryPaper.classList.add('disintegrate-final'); // Fades the paper out
-
-                // Change video to final message video
-                if(ritualVideo) {
-                    ritualVideo.loop = false;
-                    ritualVideo.src = END_VIDEO_URL;
-                    ritualVideo.load();
-                    ritualVideo.play().catch(e => console.error("End video play failed:", e));
-                    
-                    ritualVideo.onended = () => {
-                        ritualVideoPopup.classList.remove('active');
-                        showFinalMessage();
-                    }
-                } else {
-                    // Fallback if video failed to load
-                    ritualVideoPopup.classList.remove('active');
-                    showFinalMessage();
-                }
-
-            }, RITUAL_DURATION);
+            if (videoLoopCounter < VIDEO_LOOP_COUNT) {
+                // Loop the video 3 times total
+                ritualVideo.currentTime = 0;
+                ritualVideo.play().catch(e => console.error("Video loop play failed:", e));
+            } else {
+                // Ensure video remains open for the full 40 seconds ritual
+                // The final fade will be handled by handleFinalRitualFade
+            }
+        }
+        
+        function handleFinalRitualFade() {
+             isRitualRunning = false;
+             
+             // 1. Fade out the Diary Paper
+             diaryPaper.classList.add('disintegrate-final'); 
+             
+             // 2. Play End.mp3 and show final message after diary is gone
+             if (!isMuted) {
+                endAudio.play().catch(e => console.error("End audio play failed:", e)); // Requirement: Play End.mp3
+             }
+             
+             // 3. Close video and show final message canvas
+             ritualVideoPopup.classList.remove('active');
+             showFinalMessage();
         }
         
         /**
@@ -1119,8 +1126,7 @@ Eli`;
 
         // 4. OKIE DOKIE Button (opens diary)
         finalContinueBtn.addEventListener('click', () => {
-            // Requirement: Set the canvas to white rounded and center it on the screen
-            // NOTE: This CSS is already applied to #diary-paper
+            // NOTE: This canvas stays, as per requirement: "Don't remove this when the okie dokie button is pressed."
             diaryPaper.classList.add('visible');
             
             // Hide message footer and stop its audio
@@ -1154,5 +1160,4 @@ Eli`;
         });
     </script>
 </body>
-
 </html>
